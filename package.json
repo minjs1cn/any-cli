@@ -1,24 +1,49 @@
 {
-  "name": "@any/cli",
+  "name": "any-cli",
   "version": "1.0.0",
   "main": "lib/main.js",
   "bin": {
-    "any": "bin/any"
+    "any": "bin/main"
   },
+  "author": {
+    "name": "mins1cn",
+    "email": "303890562@qq.com",
+    "url": "https://minjs1cn.github.io"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/minjs1cn/any-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/minjs1cn/any-cli/issues"
+  },
+  "homepage": "https://minjs1cn.github.io/any-cli/",
+  "keywords": [
+    "typescript",
+    "node",
+    "cli"
+  ],
   "scripts": {
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "build": "tsc"
   },
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^14.14.7",
+    "@types/qs": "^6.9.5",
     "typescript": "^4.0.5"
   },
   "dependencies": {
+    "@octokit/auth": "^2.0.1",
+    "@octokit/request": "^5.4.10",
+    "axios": "^0.21.0",
     "chalk": "^4.1.0",
     "commander": "^6.2.0",
     "download-git-repo": "^3.0.2",
     "fs-extra": "^9.0.1",
+    "inquirer": "^7.3.3",
     "ora": "^5.1.0",
+    "qs": "^6.9.4",
     "readline": "^1.3.0"
   }
 }
