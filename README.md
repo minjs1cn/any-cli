@@ -5,9 +5,7 @@
 ## Usage
 
 ```javascript
-yarn add @any/cli
+yarn add @minjs1cn/any-cli
 
 any -h
 ```
-
-## Commands
