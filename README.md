@@ -1,3 +1,10 @@
-# tpl-js-npm
+# any-cli
 
-开发js-npm包的工程模版
+定制私有任务的cli工具
+
+## Usage
+
+```
+yarn add @minjs1cn/any-cli
+any -h
+```
