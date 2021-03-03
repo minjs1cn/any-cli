@@ -1,6 +1,6 @@
 {
   "name": "@minjs1cn/any-cli",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "node cli tool",
   "main": "lib/index.js",
   "bin": {
