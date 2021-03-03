@@ -5,13 +5,13 @@ export async function get<T>(url: string): Promise<T> {
     let data = ''
     http.get(url, res => {
       res.on('data', chunk => {
+        console.log(data)
         data += chunk
       })
       res.on('end', () => {
         resolve(JSON.parse(data))
       })
     }).on('error', e => {
-      console.error(e)
       reject(e)
     })
   })

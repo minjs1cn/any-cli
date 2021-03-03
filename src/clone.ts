@@ -26,21 +26,24 @@ async function clone(projectName: string, options: Record<string, string>) {
     plugin = githubPlugin()
   }
 
-  const names = await plugin.loadRepos(config)
-  const answers = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'name',
-      choices: names
+  try {
+    const names = await plugin.loadRepos(config)
+    const answers = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'name',
+        choices: names
+      }
+    ])
+    if (projectName === undefined) {
+      targetDir = path.join(config.cwd, answers.name)
     }
-  ])
-
-  if (projectName === undefined) {
-    targetDir = path.join(config.cwd, answers.name)
+  
+    const url = plugin.resolveDownloadUrl(answers.name)
+    await download(url, targetDir)
+  } catch (error) {
+    logger.error(error)
   }
-
-  const url = plugin.resolveDownloadUrl(answers.name)
-  await download(url, targetDir)
 }
 
 module.exports = clone

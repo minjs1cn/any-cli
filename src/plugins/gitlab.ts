@@ -17,13 +17,24 @@ export default function(): AnyPlugin {
     loadRepos(config) {
       const { org } = config
       
-      return new Promise(resolve => {
-        http.get<[{ id: number }]>('http://gitlab2.dui88.com/api/v4/groups?search='+encodeURIComponent(org)).then(res => {
-          const { id } = res[0]  
-          http.get<Repos>(`http://gitlab2.dui88.com/api/v4/groups/${id}/projects`).then(data => {
-            repos = data
-            resolve(data.map(item => item.name))
-          })
+      return new Promise((resolve, reject) => {
+        const url = 'http://gitlab2.dui88.com/api/v4/groups?search='+encodeURIComponent(org)
+        http.get<[{ id: number, name: string }]>(url).then(res => {
+          if (res.length) {
+            const { id, name } = res[0]
+            const reposUrl = `http://gitlab2.dui88.com/api/v4/groups/${id}/projects`
+            http.get<Repos>(reposUrl).then(data => {
+              repos = data
+              const names = data.map(item => item.name)
+              if (names.length) {
+                resolve(names)
+              } else {
+                reject('组织 ' + name + ' 下不存在仓库，点击查看 ' + reposUrl)
+              }
+            })
+          } else {
+            reject('无法获取组织信息，点击查看 ' + url)
+          }
         })
       })
     },

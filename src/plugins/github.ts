@@ -11,7 +11,7 @@ export default function(): AnyPlugin {
     name: 'any:github',
     loadRepos(config) {
       const { org } = config
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         octokit
           .repos
           .listForOrg({
@@ -20,7 +20,14 @@ export default function(): AnyPlugin {
           })
           .then(({ data }) => {
             repos = data
-            resolve(data.map(item => item.name))
+            const names = data.map(item => item.name)
+            if (names.length) {
+              resolve(names)
+            } else {
+              reject('组织 ' + org + ' 下不存在仓库')
+            }
+          }).catch(() => {
+            reject('查询组织 ' + org + ' 信息失败')
           })
       })
     },
