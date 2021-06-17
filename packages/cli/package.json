@@ -1,7 +1,7 @@
 {
   "name": "@any/cli",
   "version": "1.0.0",
-  "description": "> TODO: description",
+  "description": "any cli tools",
   "author": "minjs1cn <303890562@qq.com>",
   "homepage": "",
   "license": "ISC",
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github2.com:minjs1cn/any-cli.git"
+    "url": "git@github.com:minjs1cn/any-cli.git"
   },
   "scripts": {
   }
