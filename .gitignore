@@ -1,5 +1,7 @@
 node_modules
 lib
+es
+dist
 
 .idea
 .DS_Store
