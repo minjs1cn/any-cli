@@ -16,7 +16,7 @@ export function getFileHash(localfile: string) {
  * @param localfile - 本地文件
  * @param hashLen - hash长度
  */
-export function reName(localfile: string, hashLen: number = 8) {
+export function reFile(localfile: string, hashLen: number = 8) {
   // 获取文件hash
   const hash = getFileHash(localfile).slice(0, hashLen)
   // 如果已经被hash了 则直接返回
@@ -47,7 +47,7 @@ export function reDir(input: string, hashLen: number = 8) {
   try {
     files = glob.sync(`${input}/**/*`).filter(item => fs.statSync(item).isFile())
   } catch (error) {}
-  return files.map(localfile => reName(localfile, hashLen))
+  return files.map(localfile => reFile(localfile, hashLen))
 }
 
 /**
@@ -55,7 +55,7 @@ export function reDir(input: string, hashLen: number = 8) {
  * @param localfile - 本地文件
  * @param hashLen - hash长度
  */
-export function revokeName(localfile: string, hashLen: number = 8) {
+export function revokeFile(localfile: string, hashLen: number = 8) {
   // 获取文件hash
   const hash = getFileHash(localfile).slice(0, hashLen)
   // 如果已经被hash了 则直接返回
@@ -77,5 +77,5 @@ export function revokeDir(input: string, hashLen: number = 8) {
   try {
     files = glob.sync(`${input}/**/*`).filter(item => fs.statSync(item).isFile())
   } catch (error) {}
-  return files.map(localfile => revokeName(localfile, hashLen))
+  return files.map(localfile => revokeFile(localfile, hashLen))
 }

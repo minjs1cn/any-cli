@@ -10,8 +10,12 @@
     "lib": "lib",
     "test": "__tests__"
   },
+  "bin": {
+    "any-cli": "bin/any-cli"
+  },
   "files": [
-    "lib"
+    "lib",
+    "bin"
   ],
   "publishConfig": {
     "access": "public"
@@ -21,5 +25,17 @@
     "url": "git@github.com:minjs1cn/any-cli.git"
   },
   "scripts": {
+    "test": "mocha __tests__/**/*.test.js",
+    "dev": "tsc --watch",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@any/compiler": "^1.0.0",
+    "@types/fs-extra": "^9.0.11",
+    "chalk": "^4.1.1",
+    "chokidar": "^3.5.2",
+    "commander": "^7.2.0",
+    "fs-extra": "^10.0.0",
+    "ora": "^5.4.1"
   }
 }

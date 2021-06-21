@@ -1,6 +1,4 @@
-import { ConfigAPI } from '@babel/core';
-
-module.exports = function(api?: ConfigAPI) {
+module.exports = function(api) {
   if (api) {
     api.cache.never();
   }
@@ -23,3 +21,4 @@ module.exports = function(api?: ConfigAPI) {
     plugins: [],
   };
 };
+

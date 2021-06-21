@@ -22,7 +22,7 @@ function createSourceFilter(names: string[]) {
  * @param message - 提示信息
  * @param key - 缓存key
  */
-export async function MyInquirer(pages: string[], message: string = '请输入您的选择', key: string = 'lastchoice') {
+export async function myInquirer(pages: string[], message: string = '请输入您的选择', key: string = 'lastchoice') {
   const lastName = cache.get<string>(key)
 
   if (lastName) {

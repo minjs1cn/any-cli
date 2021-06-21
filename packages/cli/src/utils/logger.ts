@@ -16,7 +16,7 @@ function title (title: string) {
   process.stdout.write(chalk.bold.green.inverse(title) + '\n')
 }
 
-export default {
+export const logger = {
   title,
   info,
   warn,

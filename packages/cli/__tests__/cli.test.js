@@ -1,7 +1,9 @@
 'use strict';
-
-const cli = require('..');
+const { getConfig } = require('../lib')
 
 describe('@any/cli', () => {
-    it('needs tests');
+    it('compileJs', () => {
+        const config = getConfig()
+        console.log(config)
+    });
 });
