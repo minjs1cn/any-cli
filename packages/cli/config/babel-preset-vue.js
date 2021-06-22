@@ -1,1 +1,1 @@
-module.exports = require('@any/compiler/config/babel-preset-vue')
+module.exports = require('@minjs1cn/compiler/config/babel-preset-vue')
