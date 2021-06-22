@@ -1,4 +1,4 @@
-# `@any/inquirer`
+# `@minjs1cn/inquirer`
 
 > 多组件/页面询问式交互，带有缓存机制
 
@@ -7,7 +7,7 @@
 直接使用内部简单封装好的方法
 
 ```js
-const { createInquirer } = require('@any/inquirer');
+const { createInquirer } = require('@minjs1cn/inquirer');
 
 // 匹配src/*/index.js目录
 const inquire = createInquirer('src', 'index.js')
@@ -20,7 +20,7 @@ console.log(name)
 或者字节自定义也可以
 
 ```js
-const { getPages, myInquirer } = require('@any/inquirer');
+const { getPages, myInquirer } = require('@minjs1cn/inquirer');
 
 // 匹配src/*/index.js目录
 const pages = getPages('src', 'index.js')

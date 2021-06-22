@@ -1,4 +1,4 @@
-# `@any/compiler`
+# `@minjs1cn/compiler`
 
 > 单文件编译，支持less、ts、js，单独支持vue的sfc。如果需要支持jsx，请安装对应的babel预设，例如支持vue，安装：@vue/preset-jsx
 
@@ -12,7 +12,7 @@ const {
   setNodeEnv,
   isScript,
   isStyle
-} = require('@any/compiler');
+} = require('@minjs1cn/compiler');
 
 /**
  * 编译文件夹内所有文件

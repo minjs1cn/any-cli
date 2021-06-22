@@ -1,11 +1,9 @@
-# `@any/cli`
+# `@minjs1cn/any-cli`
 
-> TODO: description
+> 构建工具
 
 ## Usage
 
-```
-const cli = require('@any/cli');
-
-// TODO: DEMONSTRATE API
+```shell
+any-cli -h
 ```

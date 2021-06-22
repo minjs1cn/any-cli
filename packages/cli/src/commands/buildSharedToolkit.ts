@@ -1,4 +1,4 @@
-import { compileJs, compileStyle, isDeclaration, isScript, isStyle, replaceExt, setModuleEnv, setNodeEnv } from '@any/compiler'
+import { compileJs, compileStyle, isScript, isStyle, setModuleEnv, setNodeEnv } from '@minjs1cn/compiler'
 import fs from 'fs-extra'
 import path from 'path'
 import ora from 'ora'

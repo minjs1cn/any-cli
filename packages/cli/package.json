@@ -1,5 +1,5 @@
 {
-  "name": "@any/cli",
+  "name": "@minjs1cn/any-cli",
   "version": "0.0.1",
   "description": "any cli tools",
   "author": "minjs1cn <303890562@qq.com>",
@@ -31,7 +31,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@any/compiler": "^1.0.2",
+    "@minjs1cn/compiler": "^1.0.2",
     "@types/fs-extra": "^9.0.11",
     "chalk": "^4.1.1",
     "chokidar": "^3.5.2",
