@@ -1,0 +1,48 @@
+{
+  "name": "@any/compiler",
+  "version": "1.0.0",
+  "description": "compile some file",
+  "author": "minjs1cn <303890562@qq.com>",
+  "homepage": "",
+  "license": "ISC",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib",
+    "config"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:minjs1cn/any-cli.git"
+  },
+  "scripts": {
+    "test": "mocha __tests__/**/*.test.js",
+    "dev": "tsc --watch",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@babel/core": "^7.14.6",
+    "@babel/preset-env": "^7.14.5",
+    "@babel/preset-typescript": "^7.14.5",
+    "@types/babel__core": "^7.1.14",
+    "@types/clean-css": "^4.2.4",
+    "@types/fs-extra": "^9.0.11",
+    "@types/hash-sum": "^1.0.0",
+    "@types/less": "^3.0.2",
+    "@vue/babel-preset-jsx": "^1.2.4",
+    "@vue/component-compiler-utils": "^3.2.2",
+    "clean-css": "^5.1.2",
+    "fs-extra": "^10.0.0",
+    "hash-sum": "^2.0.0",
+    "less": "^4.1.1",
+    "postcss": "^8.3.5",
+    "postcss-load-config": "^3.1.0",
+    "vue-template-compiler": "^2.6.14"
+  }
+}
