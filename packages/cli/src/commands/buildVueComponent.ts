@@ -1,4 +1,4 @@
-import { compileJs, compileStyle, isDeclaration, isScript, isStyle, replaceExt, setModuleEnv, setNodeEnv } from '@any/compiler'
+import { compileJs, compileSfc, compileStyle, isDeclaration, isScript, isStyle, isVueSFC, replaceExt, setModuleEnv, setNodeEnv } from '@any/compiler'
 import fs from 'fs-extra'
 import path from 'path'
 import ora from 'ora'
@@ -141,8 +141,12 @@ async function compileDir(dir: string) {
  * @returns 
  */
 async function compileFile(filename: string) {
+  if (isVueSFC(filename)) {
+    return compileSfc(filename)
+  }
   // 如果是脚本文件
   if (isScript(filename)) {
+    removeVue(filename)
     return compileJs(filename)
   }
   // 如果是样式文件
@@ -151,6 +155,24 @@ async function compileFile(filename: string) {
   }
   // 移除无效文件
   return fs.remove(filename)
+}
+
+/**
+ * 移除vue.extend，直接导出对象
+ * @param filePath 
+ */
+ function removeVue(filePath: string) {
+  if (filePath.indexOf('.tsx') === -1) return
+  
+  let code = fs.readFileSync(filePath, 'utf-8')
+  code = code.replace(`import Vue from "vue";`, '')
+  code = code.replace(`import Vue from "vue"`, '')
+  code = code.replace(`import Vue from 'vue';`, '')
+  code = code.replace(`import Vue from 'vue'`, '')
+  code = code.replace(/Vue\.extend\((\{[\s\S\n\r\t]+\})\)/g, (a, b) => {
+    return b
+  })
+  fs.writeFileSync(filePath, code)
 }
 
 /**
