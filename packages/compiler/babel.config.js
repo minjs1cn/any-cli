@@ -1,3 +1,3 @@
 module.exports = {
-  presets: ['./config/babel-preset.js'],
+  presets: ['./config/babel-preset-vue-next.js'],
 }

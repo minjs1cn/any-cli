@@ -1,9 +1,15 @@
 'use strict';
 
-const { compileJs } = require('../lib');
+const { compileSfc, compileJs } = require('../lib');
 
-describe('@any/compiler', () => {
-    it('compileJs', () => {
-        compileJs('examples/a.ts')
-    });
-});
+compileJs('examples/a.tsx')
+
+// describe('@any/compiler', () => {
+//     // it('compileJs', () => {
+//     //     compileJs('examples/a.tsx')
+//     // });
+
+//     it('compileSfc', () => {
+//         compileSfc('examples/index.vue')
+//     })
+// });

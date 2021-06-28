@@ -1,47 +1,30 @@
-import * as compileUtils from '@vue/component-compiler-utils'
-import * as vueTemplateCompiler from 'vue-template-compiler'
-import { VueTemplateCompiler } from '@vue/component-compiler-utils/lib/types'
+import * as compilerSfc from '@vue/compiler-sfc'
 import hash from 'hash-sum'
 import fs from 'fs-extra'
 import path from 'path'
 import { replaceExt } from '../utils'
 import { compileJs } from './compile-js'
 
-const compiler = vueTemplateCompiler as VueTemplateCompiler
 const RENDER_FN = '__vue_render__'
-const STATIC_RENDER_FN = '__vue_staticRenderFns__'
 const EXPORT = 'export default {'
 
 function parseSfc(filePath: string) {
   const source = fs.readFileSync(filePath, 'utf-8')
-  return compileUtils.parse({
-    source,
-    compiler,
+  return compilerSfc.parse(source, {
     filename: filePath
   })
 }
 
-function compileTemplate(source: string) {
-  const result =  compileUtils.compileTemplate({
-    source,
-    compiler,
-    filename: '',
-    isProduction: true
-  })
-  return result.code
-}
-
 function injectRender(script: string, render: string) {
   render = render
-    .replace('var render', `var ${RENDER_FN}`)
-    .replace('var staticRenderFns', `var ${STATIC_RENDER_FN}`)
+    .replace('export function render', `function ${RENDER_FN}`)
 
   return script
-    .replace(EXPORT, `${render}\n${EXPORT}\n  render: ${RENDER_FN},\n\n  staticRenderFns: ${STATIC_RENDER_FN},\n`)
+    .replace(EXPORT, `${render}\n${EXPORT}\n  render: ${RENDER_FN},\n`)
 }
 
 function injectScopedId(script: string, scopedId: string) {
-  return script.replace(EXPORT, `${EXPORT}\n  _scopedId: "${scopedId}",\n\n`)
+  return script.replace(EXPORT, `${EXPORT}\n  __scopeId: "${scopedId}",\n\n`)
 }
 
 
@@ -50,7 +33,7 @@ function getSfcStylePath(filePath: string, ext: string, index: number) {
   return replaceExt(filePath, `-sfc${number}.${ext}`);
 }
 
-function injectStyle(script: string, styles: compileUtils.SFCBlock[], filePath: string) {
+function injectStyle(script: string, styles: compilerSfc.SFCStyleBlock[], filePath: string) {
   const imports = styles.map((style, index) => {
     const { base } = path.parse(getSfcStylePath(filePath, 'css', index))
     return `import "./${base}";`
@@ -64,13 +47,20 @@ function injectStyle(script: string, styles: compileUtils.SFCBlock[], filePath: 
  * @param filePath - 文件地址
  * @returns 
  */
-export function compileSfc(filePath: string) {
+export function compileSfc(filename: string) {
   // 读取源码
-  const source = fs.readFileSync(filePath, 'utf-8');
+  const source = fs.readFileSync(filename, 'utf-8');
   // 分析区块
-  const { template, script, styles } = parseSfc(filePath)
+  const { descriptor, errors } = parseSfc(filename)
+
+  if (errors.length) {
+    errors.forEach((error) =>
+      console.error(filename, error)
+    )
+    return null
+  }
   // 样式区块中是否有scope
-  const hasScoped = styles.some(s => s.scoped)
+  const hasScoped = descriptor.styles.some((s) => s.scoped)
   // 生成scopeId
   const scopedId = hasScoped ? `data-v-${hash(source)}` : ''
   // 任务队列
@@ -79,15 +69,24 @@ export function compileSfc(filePath: string) {
   // compile js block
   tasks.push(
     new Promise(resolve => {
-      const lang = script?.lang || 'js'
-      const scriptFilePath = replaceExt(filePath, `.${lang}`)
-      let scriptContent = script?.content || 'export default {}'
+      
+      const lang = descriptor.script?.lang || descriptor.scriptSetup?.lang || 'js'
+      const scriptFilePath = replaceExt(filename, `.${lang}`)
+      let scriptContent = compilerSfc.compileScript(descriptor, {
+        id: scopedId,
+        isProd: true
+      }).content
       // 脚本内容
-      scriptContent = injectStyle(scriptContent, styles, filePath)
+      scriptContent = injectStyle(scriptContent, descriptor.styles, descriptor.filename)
 
       // 创建render函数
-      if (template) {
-        scriptContent = injectRender(scriptContent, compileTemplate(template.content))
+      if (descriptor.template) {
+        const { code } = compilerSfc.compileTemplate({
+          source: descriptor.template.content,
+          id: scopedId,
+          filename: descriptor.filename
+        })
+        scriptContent = injectRender(scriptContent, code)
       }
 
       // 设置scopeId
@@ -104,18 +103,17 @@ export function compileSfc(filePath: string) {
 
   // compile style block
   tasks.push(
-    ...styles.map((style, index) => {
-      const cssFilePath = getSfcStylePath(filePath, 'css', index)
+    ...descriptor.styles.map((style, index) => {
+      const cssFilePath = getSfcStylePath(filename, 'css', index)
 
-      const styleSource  = compileUtils.compileStyle({
+      const styleSource = compilerSfc.compileStyle({
         source: style.content,
         scoped: style.scoped ? true : false,
         id: scopedId,
-        filename: cssFilePath,
-        preprocessLang: style.lang
-      }).code
+        filename: descriptor.filename
+      })
 
-      fs.writeFileSync(cssFilePath, styleSource)
+      fs.writeFileSync(cssFilePath, styleSource.code)
       return styleSource
     })
   )
