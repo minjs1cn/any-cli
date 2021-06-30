@@ -9,7 +9,6 @@ import { getConfig } from '../config'
 const CONFIG = getConfig()
 // 要忽略的文件夹
 const ignoreDirs = CONFIG.ignore
-const hasHooks = CONFIG.hooks
 
 // 所有构建任务
 const tasks = [
@@ -31,17 +30,22 @@ const tasks = [
   },
 ]
 
-/**
- * 构建每个包的入口
- * @returns 
- */
- async function buildPackageEntry() {
-  const esEntryFile = path.join(CONFIG.es, 'index.js');
-  const libEntryFile = path.join(CONFIG.lib, 'index.js');
-  const esStyleEntryFile = path.join(CONFIG.es, `index.less`);
-  const libStyleEntryFile = path.join(CONFIG.lib, `index.less`);
-  const files = fs.readdirSync(CONFIG.es).filter(filename => !ignoreDirs.includes(filename))
-  const hooksDir = path.join(CONFIG.es, 'hooks')
+// dev模式下构建任务
+const devTasks = [
+  {
+    title: 'create package entry',
+    task: createSrcPackageEntry
+  }
+]
+
+async function createSrcPackageEntry() {
+  fs.outputFileSync(path.join(CONFIG.src, 'index.ts'), createPackageEntry(CONFIG.src))
+}
+
+// 生成包入口
+function createPackageEntry(dest: string) {
+  const files = fs.readdirSync(dest).filter(filename => !ignoreDirs.includes(filename))
+  const hooksDir = path.join(dest, 'hooks')
   let hooks: string[] = []
   if (fs.existsSync(hooksDir)) {
     hooks = fs.readdirSync(hooksDir).map(filename => replaceExt(filename, ''))
@@ -65,27 +69,43 @@ if (typeof window !== undefined && window.Vue) {
 `
   let exports = `
 export {
-  install,\n${files.map(filename => '  ' + filename).join(',\n')}
-`
+  install,\n${files.map(filename => '  ' + filename).join(',\n')}`
 
-if (hooks.length) {
-  exports += `,\n${hooks.map(hookname => '  ' + hookname).join(',\n')}\n`
-}
+  if (hooks.length) {
+    exports += `,\n${hooks.map(hookname => '  ' + hookname).join(',\n')}\n`
+  }
 
-exports += `}`
+  exports += `}`
   const detaultExports = `
 export default {
   install
 }   
 `
   let imports = files.map(filename => `import ${filename} from "./${filename}";`).join('\n')
-  imports += hooks.map(hookname => `import ${hookname} from "./hooks/${hookname}";`).join('\n')
-  fs.outputFileSync(esEntryFile, imports + components + install + exports + detaultExports)
-  
+  if (hooks.length) {
+    imports += '\n' + hooks.map(hookname => `import ${hookname} from "./hooks/${hookname}";`).join('\n')
+  }
+  return imports + components + install + exports + detaultExports
+}
+
+/**
+ * 构建每个包的入口
+ * @returns 
+ */
+async function buildPackageEntry() {
+  const esEntryFile = path.join(CONFIG.es, 'index.js');
+  const libEntryFile = path.join(CONFIG.lib, 'index.js');
+  const esStyleEntryFile = path.join(CONFIG.es, `index.less`);
+  const libStyleEntryFile = path.join(CONFIG.lib, `index.less`);
+  const files = fs.readdirSync(CONFIG.es).filter(filename => !ignoreDirs.includes(filename))
+
+  const content = createPackageEntry(CONFIG.es)
+  fs.outputFileSync(esEntryFile, content)
+
   setModuleEnv('esmodule')
   await compileJs(esEntryFile)
 
-  fs.outputFileSync(libEntryFile, imports + components + install + exports)
+  fs.outputFileSync(libEntryFile, content)
 
   setModuleEnv('commonjs')
   await compileJs(libEntryFile)
@@ -230,44 +250,69 @@ async function runBuildTasks() {
 }
 
 /**
- * 监听文件变换启动编译
+ * 运行所有任务
  */
-function watchFileChange() {
-  console.info('\nWatching file changes...');
-
-  chokidar.watch(CONFIG.src).on('change', async path => {
-    const spinner = ora('File changed, start compilation...').start()
-    const esPath = path.replace(CONFIG.src, CONFIG.es)
-    const libPath = path.replace(CONFIG.src, CONFIG.lib)
+async function runDevTasks() {
+  for (let i = 0; i < devTasks.length; i++) {
+    const { task, title } = devTasks[i]
+    const spinner = ora(title).start()
 
     try {
-      await fs.copy(path, esPath)
-      await fs.copy(path, libPath)
-      // 设置环境变量
-      setModuleEnv('esmodule')
-      await compileFile(esPath)
-      // 设置环境变量
-      setModuleEnv('commonjs')
-      await compileFile(libPath)
-      spinner.succeed('Compiled: ' + path)
-    } catch (err) {
-      spinner.fail('Compile failed: ' + path)
-      console.log(err)
+      await task()
+      spinner.succeed(title)
+    } catch (error) {
+      spinner.fail(title)
+      throw error
     }
-  })
+  }
 }
 
-export async function buildVueComponent(cmd: { watch?: boolean } = {}) {
+/**
+ * 监听文件变换启动编译
+ */
+function watchFileChange(callback: (path: string) => void) {
+  console.info('\nWatching file changes...');
+
+  chokidar.watch(CONFIG.src).on('change', callback)
+}
+
+async function compileChangeFile(path: string) {
+  const spinner = ora('File changed, start compilation...').start()
+  const esPath = path.replace(CONFIG.src, CONFIG.es)
+  const libPath = path.replace(CONFIG.src, CONFIG.lib)
+
+  try {
+    await fs.copy(path, esPath)
+    await fs.copy(path, libPath)
+    // 设置环境变量
+    setModuleEnv('esmodule')
+    await compileFile(esPath)
+    // 设置环境变量
+    setModuleEnv('commonjs')
+    await compileFile(libPath)
+    spinner.succeed('Compiled: ' + path)
+  } catch (err) {
+    spinner.fail('Compile failed: ' + path)
+    console.log(err)
+  }
+}
+
+export async function buildVueComponent(cmd: { watch?: boolean, dev?: boolean } = {}) {
   setNodeEnv('production')
 
   try {
     await clean()
-    await runBuildTasks()
-
-    if (cmd.watch) {
-      watchFileChange()
+    if (cmd.dev) {
+      await runDevTasks()
+      if (cmd.watch) {
+        watchFileChange(runDevTasks)
+      }
+    } else {
+      await runBuildTasks()
+      if (cmd.watch) {
+        watchFileChange(compileChangeFile)
+      }
     }
-    
   } catch (error) {
     console.error('build faild', error)
     process.exit(1)

@@ -15,6 +15,7 @@ program
   .command('build-vuec')
   .description('build vue component')
   .option('--watch', 'Watch file change')
+  .option('--dev', 'build component in development')
   .action(buildVueComponent)
 
 program
