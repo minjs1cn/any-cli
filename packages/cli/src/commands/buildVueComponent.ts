@@ -1,4 +1,4 @@
-import { compileJs, compileSfc, compileStyle, isScript, isStyle, isVueSFC, setModuleEnv, setNodeEnv } from '@minjs1cn/compiler'
+import { compileJs, compileSfc, compileStyle, isScript, isStyle, isVueSFC, replaceExt, setModuleEnv, setNodeEnv } from '@minjs1cn/compiler'
 import fs from 'fs-extra'
 import path from 'path'
 import ora from 'ora'
@@ -7,9 +7,9 @@ import { clean } from './clean'
 import { getConfig } from '../config'
 
 const CONFIG = getConfig()
-
 // 要忽略的文件夹
 const ignoreDirs = CONFIG.ignore
+const hasHooks = CONFIG.hooks
 
 // 所有构建任务
 const tasks = [
@@ -41,8 +41,13 @@ const tasks = [
   const esStyleEntryFile = path.join(CONFIG.es, `index.less`);
   const libStyleEntryFile = path.join(CONFIG.lib, `index.less`);
   const files = fs.readdirSync(CONFIG.es).filter(filename => !ignoreDirs.includes(filename))
-  
+  const hooksDir = path.join(CONFIG.es, 'hooks')
+  let hooks: string[] = []
+  if (fs.existsSync(hooksDir)) {
+    hooks = fs.readdirSync(hooksDir).map(filename => replaceExt(filename, ''))
+  }
   const components = "\n\nconst components = [\n" + files.map(filename => `  ${filename}`).join(',\n') + '\n]\n'
+
   const install = `
 function install(Vue){
   components.forEach(component => {
@@ -58,17 +63,24 @@ if (typeof window !== undefined && window.Vue) {
   install(window.Vue)
 }
 `
-  const exports = `
+  let exports = `
 export {
   install,\n${files.map(filename => '  ' + filename).join(',\n')}
+`
+
+if (hooks.length) {
+  exports += `,\n${hooks.map(hookname => '  ' + hookname).join(',\n')}\n`
 }
 
+exports += `}`
+  const detaultExports = `
 export default {
   install
-}  
+}   
 `
-  const imports = files.map(filename => `import ${filename} from "./${filename}";`).join('\n')
-  fs.outputFileSync(esEntryFile, imports + components + install + exports)
+  let imports = files.map(filename => `import ${filename} from "./${filename}";`).join('\n')
+  imports += hooks.map(hookname => `import ${hookname} from "./hooks/${hookname}";`).join('\n')
+  fs.outputFileSync(esEntryFile, imports + components + install + exports + detaultExports)
   
   setModuleEnv('esmodule')
   await compileJs(esEntryFile)

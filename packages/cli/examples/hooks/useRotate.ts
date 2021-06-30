@@ -1,1 +1,1 @@
-export function useRotate(){}
+export default function useRotate(){}

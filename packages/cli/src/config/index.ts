@@ -4,15 +4,17 @@ import { CONST } from "../common"
 type TConfig = {
   src: string
   es: string
-  lib: string,
+  lib: string
   ignore: string[]
+  hooks: boolean
 }
 
 const defaultConfig = {
   src: CONST.SRC_DIR,
   es: CONST.ES_DIR,
   lib: CONST.LIB_DIR,
-  ignore: []
+  ignore: [],
+  hooks: false
 }
 
 export function getConfig(): TConfig {
