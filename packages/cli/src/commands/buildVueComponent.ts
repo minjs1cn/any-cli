@@ -39,11 +39,11 @@ const devTasks = [
 ]
 
 async function createSrcPackageEntry() {
-  fs.outputFileSync(path.join(CONFIG.src, 'index.ts'), createPackageEntry(CONFIG.src))
+  fs.outputFileSync(path.join(CONFIG.src, 'index.ts'), createPackageEntry(CONFIG.src, true))
 }
 
 // 生成包入口
-function createPackageEntry(dest: string) {
+function createPackageEntry(dest: string, ts: boolean = false) {
   const files = fs.readdirSync(dest).filter(filename => !ignoreDirs.includes(filename))
   const hooksDir = path.join(dest, 'hooks')
   let hooks: string[] = []
@@ -53,7 +53,7 @@ function createPackageEntry(dest: string) {
   const components = "\n\nconst components = [\n" + files.map(filename => `  ${filename}`).join(',\n') + '\n]\n'
 
   const install = `
-function install(Vue){
+function install(Vue${ts ? ': App' : ''}){
   components.forEach(component => {
     if (component.install) {
       Vue.use(component)
@@ -61,10 +61,6 @@ function install(Vue){
       Vue.component(component.name, component)
     }
   })
-}
-
-if (typeof window !== undefined && window.Vue) {
-  install(window.Vue)
 }
 `
   let exports = `
@@ -84,6 +80,9 @@ export default {
   let imports = files.map(filename => `import ${filename} from "./${filename}";`).join('\n')
   if (hooks.length) {
     imports += '\n' + hooks.map(hookname => `import ${hookname} from "./hooks/${hookname}";`).join('\n')
+  }
+  if (ts) {
+    imports += '\n import { App } from "vue";'
   }
   return imports + components + install + exports + detaultExports
 }
