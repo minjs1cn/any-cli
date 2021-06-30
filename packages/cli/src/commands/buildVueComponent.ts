@@ -17,6 +17,10 @@ const tasks = [
     task: createSrcPackageEntry
   },
   {
+    title: 'create package style',
+    task: createSrcPackageStyle
+  },
+  {
     title: 'build es module',
     task: buildEs
   },
@@ -30,13 +34,23 @@ const tasks = [
   }
 ]
 
+function filters(filename: string) {
+  return !ignoreDirs.includes(filename) && filename !== 'index.ts' && filename !== 'index.less'
+}
+
 async function createSrcPackageEntry() {
   fs.outputFileSync(path.join(CONFIG.src, 'index.ts'), createPackageEntry(CONFIG.src, true))
 }
 
+async function createSrcPackageStyle() {
+  const files = fs.readdirSync(CONFIG.src).filter(filters)
+  const styleContent = files.map(filename => '@import ' + '"./' + filename + '/index.less";').join('\n')
+  fs.outputFileSync(path.join(CONFIG.src, 'index.less'), styleContent)
+}
+
 // 生成包入口
 function createPackageEntry(dest: string, ts: boolean = false) {
-  const files = fs.readdirSync(dest).filter(filename => !ignoreDirs.includes(filename) && filename !== 'index.ts')
+  const files = fs.readdirSync(dest).filter(filters)
   const hooksDir = path.join(dest, 'hooks')
   let hooks: string[] = []
   if (fs.existsSync(hooksDir)) {
@@ -88,7 +102,7 @@ async function buildPackageEntry() {
   const libEntryFile = path.join(CONFIG.lib, 'index.js');
   const esStyleEntryFile = path.join(CONFIG.es, `index.less`);
   const libStyleEntryFile = path.join(CONFIG.lib, `index.less`);
-  const files = fs.readdirSync(CONFIG.es).filter(filename => !ignoreDirs.includes(filename))
+  const files = fs.readdirSync(CONFIG.es).filter(filters)
 
   const content = createPackageEntry(CONFIG.es)
   fs.outputFileSync(esEntryFile, content)
@@ -115,7 +129,7 @@ async function buildPackageEntry() {
  * 构建样式文件入口，满足babel-plugin-import规范
  */
 async function buildStyleEntry() {
-  const files = fs.readdirSync(CONFIG.es).filter(filename => !ignoreDirs.includes(filename) && filename !== 'index.js')
+  const files = fs.readdirSync(CONFIG.src).filter(filters)
   
   await Promise.all(
     files.map(filename => {
@@ -250,6 +264,11 @@ function watchFileChange(callback: (path: string) => void) {
 }
 
 async function compileChangeFile(filepath: string) {
+  console.log(filepath)
+  const entryJs = path.join(CONFIG.src, 'index.ts')
+  const entryStyle = path.join(CONFIG.src, 'index.less')
+  if (filepath === entryJs || filepath === entryStyle) return
+  
   const spinner = ora('File changed, start compilation...').start()
   const esPath = filepath.replace(CONFIG.src, CONFIG.es)
   const libPath = filepath.replace(CONFIG.src, CONFIG.lib)
@@ -269,25 +288,42 @@ async function compileChangeFile(filepath: string) {
     console.log(err)
   }
 
-  const entry = path.join(CONFIG.src, 'index.ts')
-  if (filepath === entry) return
-
-  try {
-    createSrcPackageEntry()
-    const esEntry = path.join(CONFIG.es, 'index.ts')
-    const libEntry = path.join(CONFIG.lib, 'index.ts')
-    await fs.copy(entry, esEntry)
-    await fs.copy(entry, libEntry)
-    // 设置环境变量
-    setModuleEnv('esmodule')
-    await compileFile(esEntry)
-    // 设置环境变量
-    setModuleEnv('commonjs')
-    await compileFile(libEntry)
-    spinner.succeed('Compiled: ' + entry)
-  } catch (err) {
-    spinner.fail('Compile failed: ' + entry)
-    console.log(err)
+  if (isStyle(filepath)) {
+    try {
+      createSrcPackageStyle()
+      const esEntry = path.join(CONFIG.es, 'index.less')
+      const libEntry = path.join(CONFIG.lib, 'index.less')
+      await fs.copy(entryStyle, esEntry)
+      await fs.copy(entryStyle, libEntry)
+      // 设置环境变量
+      setModuleEnv('esmodule')
+      await compileFile(esEntry)
+      // 设置环境变量
+      setModuleEnv('commonjs')
+      await compileFile(libEntry)
+      spinner.succeed('Compiled: ' + entryStyle)
+    } catch (err) {
+      spinner.fail('Compile failed: ' + entryStyle)
+      console.log(err)
+    }
+  } else if(isScript(filepath)) {
+    try {
+      createSrcPackageEntry()
+      const esEntry = path.join(CONFIG.es, 'index.ts')
+      const libEntry = path.join(CONFIG.lib, 'index.ts')
+      await fs.copy(entryJs, esEntry)
+      await fs.copy(entryJs, libEntry)
+      // 设置环境变量
+      setModuleEnv('esmodule')
+      await compileFile(esEntry)
+      // 设置环境变量
+      setModuleEnv('commonjs')
+      await compileFile(libEntry)
+      spinner.succeed('Compiled: ' + entryJs)
+    } catch (err) {
+      spinner.fail('Compile failed: ' + entryJs)
+      console.log(err)
+    }
   }
 }
 

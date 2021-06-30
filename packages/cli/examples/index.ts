@@ -1,8 +1,6 @@
 import Alert from "./Alert";
 import Hello from "./Hello";
 import Say from "./Say";
-import useA from "./hooks/useA";
-import useHaha from "./hooks/useHaha";
 import useRotate from "./hooks/useRotate";
 import { App } from "vue";
 
@@ -27,8 +25,6 @@ export {
   Alert,
   Hello,
   Say,
-  useA,
-  useHaha,
   useRotate
 }
 export default {

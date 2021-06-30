@@ -1,1 +1,3 @@
-export default function useRotate(){}
+export default function useRotate(){
+  console.log('11111')
+}
