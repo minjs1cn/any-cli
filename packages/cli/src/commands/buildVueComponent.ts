@@ -13,6 +13,10 @@ const ignoreDirs = CONFIG.ignore
 // 所有构建任务
 const tasks = [
   {
+    title: 'create package entry',
+    task: createSrcPackageEntry
+  },
+  {
     title: 'build es module',
     task: buildEs
   },
@@ -23,18 +27,6 @@ const tasks = [
   {
     title: 'build style entry',
     task: buildStyleEntry
-  },
-  {
-    title: 'build package entry',
-    task: buildPackageEntry
-  },
-]
-
-// dev模式下构建任务
-const devTasks = [
-  {
-    title: 'create package entry',
-    task: createSrcPackageEntry
   }
 ]
 
@@ -44,7 +36,7 @@ async function createSrcPackageEntry() {
 
 // 生成包入口
 function createPackageEntry(dest: string, ts: boolean = false) {
-  const files = fs.readdirSync(dest).filter(filename => !ignoreDirs.includes(filename))
+  const files = fs.readdirSync(dest).filter(filename => !ignoreDirs.includes(filename) && filename !== 'index.ts')
   const hooksDir = path.join(dest, 'hooks')
   let hooks: string[] = []
   if (fs.existsSync(hooksDir)) {
@@ -82,7 +74,7 @@ export default {
     imports += '\n' + hooks.map(hookname => `import ${hookname} from "./hooks/${hookname}";`).join('\n')
   }
   if (ts) {
-    imports += '\n import { App } from "vue";'
+    imports += '\nimport { App } from "vue";'
   }
   return imports + components + install + exports + detaultExports
 }
@@ -123,7 +115,7 @@ async function buildPackageEntry() {
  * 构建样式文件入口，满足babel-plugin-import规范
  */
 async function buildStyleEntry() {
-  const files = fs.readdirSync(CONFIG.es).filter(filename => !ignoreDirs.includes(filename))
+  const files = fs.readdirSync(CONFIG.es).filter(filename => !ignoreDirs.includes(filename) && filename !== 'index.js')
   
   await Promise.all(
     files.map(filename => {
@@ -249,24 +241,6 @@ async function runBuildTasks() {
 }
 
 /**
- * 运行所有任务
- */
-async function runDevTasks() {
-  for (let i = 0; i < devTasks.length; i++) {
-    const { task, title } = devTasks[i]
-    const spinner = ora(title).start()
-
-    try {
-      await task()
-      spinner.succeed(title)
-    } catch (error) {
-      spinner.fail(title)
-      throw error
-    }
-  }
-}
-
-/**
  * 监听文件变换启动编译
  */
 function watchFileChange(callback: (path: string) => void) {
@@ -275,23 +249,44 @@ function watchFileChange(callback: (path: string) => void) {
   chokidar.watch(CONFIG.src).on('change', callback)
 }
 
-async function compileChangeFile(path: string) {
+async function compileChangeFile(filepath: string) {
   const spinner = ora('File changed, start compilation...').start()
-  const esPath = path.replace(CONFIG.src, CONFIG.es)
-  const libPath = path.replace(CONFIG.src, CONFIG.lib)
+  const esPath = filepath.replace(CONFIG.src, CONFIG.es)
+  const libPath = filepath.replace(CONFIG.src, CONFIG.lib)
 
   try {
-    await fs.copy(path, esPath)
-    await fs.copy(path, libPath)
+    await fs.copy(filepath, esPath)
+    await fs.copy(filepath, libPath)
     // 设置环境变量
     setModuleEnv('esmodule')
     await compileFile(esPath)
     // 设置环境变量
     setModuleEnv('commonjs')
     await compileFile(libPath)
-    spinner.succeed('Compiled: ' + path)
+    spinner.succeed('Compiled: ' + filepath)
   } catch (err) {
-    spinner.fail('Compile failed: ' + path)
+    spinner.fail('Compile failed: ' + filepath)
+    console.log(err)
+  }
+
+  const entry = path.join(CONFIG.src, 'index.ts')
+  if (filepath === entry) return
+
+  try {
+    createSrcPackageEntry()
+    const esEntry = path.join(CONFIG.es, 'index.ts')
+    const libEntry = path.join(CONFIG.lib, 'index.ts')
+    await fs.copy(entry, esEntry)
+    await fs.copy(entry, libEntry)
+    // 设置环境变量
+    setModuleEnv('esmodule')
+    await compileFile(esEntry)
+    // 设置环境变量
+    setModuleEnv('commonjs')
+    await compileFile(libEntry)
+    spinner.succeed('Compiled: ' + entry)
+  } catch (err) {
+    spinner.fail('Compile failed: ' + entry)
     console.log(err)
   }
 }
@@ -301,16 +296,9 @@ export async function buildVueComponent(cmd: { watch?: boolean, dev?: boolean } 
 
   try {
     await clean()
-    if (cmd.dev) {
-      await runDevTasks()
-      if (cmd.watch) {
-        watchFileChange(runDevTasks)
-      }
-    } else {
-      await runBuildTasks()
-      if (cmd.watch) {
-        watchFileChange(compileChangeFile)
-      }
+    await runBuildTasks()
+    if (cmd.watch) {
+      watchFileChange(compileChangeFile)
     }
   } catch (error) {
     console.error('build faild', error)

@@ -1,7 +1,10 @@
 import Alert from "./Alert";
 import Hello from "./Hello";
 import Say from "./Say";
+import useA from "./hooks/useA";
+import useHaha from "./hooks/useHaha";
 import useRotate from "./hooks/useRotate";
+import { App } from "vue";
 
 const components = [
   Alert,
@@ -9,7 +12,7 @@ const components = [
   Say
 ]
 
-function install(Vue){
+function install(Vue: App){
   components.forEach(component => {
     if (component.install) {
       Vue.use(component)
@@ -19,15 +22,13 @@ function install(Vue){
   })
 }
 
-if (typeof window !== undefined && window.Vue) {
-  install(window.Vue)
-}
-
 export {
   install,
   Alert,
   Hello,
   Say,
+  useA,
+  useHaha,
   useRotate
 }
 export default {
